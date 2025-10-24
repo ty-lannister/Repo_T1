@@ -15,3 +15,33 @@ Read the CSV and then calculate the percentage contribution of each product to t
   | 1007|  A    |   25  |  7.49 |
   | 1008|  C    |   18  |  11.99|
   +-----+-------+-----+-------+`
+
+
+sol 1:
+with main as (
+
+select product, sum(quantity*price) as prod_rev from orders_tbl
+group by product),
+
+sub as (
+select *,sum(prod_rev) over (order by (select null)) as basser from main)
+
+select *,(prod_rev/basser * 100) as product_contribution from sub
+
+
+
+sol 2: 
+
+with main as (
+
+select product, sum(quantity*price) as prod_rev from orders_tbl
+group by product),
+
+sub as (
+select sum(prod_rev) as basser from main)
+
+select *,(prod_rev/basser * 100) as product_contribution  from main cross join sub
+
+
+
+
