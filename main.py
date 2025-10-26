@@ -8,39 +8,42 @@ def check_ang(str1, str2):
     B = sorted([x.lower() for x in str2 if x != ' '])
     return A == B
 
-Write a SQL Query for the below output
- Input:
- emp_id name salary dept_id 
- ----------- ----------- ------------ -----------
- 1 Alice 50000.00 1
- 2 Bob 60000.00 2
- 3 Charlie 50000.00 2
- 4 Charlie 65000.00 2
- 5 Eve 45000.00 1
+with main as (
  
- dept_id dept_name 
- ----------- ------------
- 1 HR 
- 2 Engineering 
- 3 Sales 
- 
- Output:
- dept_name employee_count highest_salary
- --------------- -------------- --------------
- Engineering 3 65000
- HR 2 50000
- Sales 0 0
+select dept_name,emp_id,salary from hawa_dept as a left join hawa_emp as b on a.dept_id = b.dept_id)
 
 
-SQL problem - 
-solve in sql - You want to identify the hierarchy of employees based on the managerid.
-employee 
-id name managerid 
-1 abc null
-2 xyz 1
-3 jhl 2
-4 hfg 2 
-if given id = 3 then output should be - 
-abc 
-xyz
-jhl"
+select distinct dept_name,count(emp_id) over (partition by dept_name order by (select null)) as emp_count,
+isnull(max(salary) over (partition by dept_name order by (select null)),0) as max_dept_sal
+from main
+
+SQL problem -
+
+ DECLARE @emp_id INT = 2;
+
+WITH emp_hierarchy AS (
+    -- Start with the given employee
+    SELECT 
+        id,
+        name,
+        managerid
+    FROM jaban_emp
+    WHERE id = @emp_id
+
+    UNION ALL
+
+    -- Recursively find each manager
+    SELECT 
+        e.id,
+        e.name,
+        e.managerid
+    FROM jaban_emp e
+    INNER JOIN emp_hierarchy eh
+        ON e.id = eh.managerid
+)
+-- Select all names, from top manager to the employee
+SELECT name
+FROM emp_hierarchy
+ORDER BY CASE WHEN managerid IS NULL THEN 0 ELSE 1 END, id;
+
+
