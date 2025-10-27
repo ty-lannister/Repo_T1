@@ -1,49 +1,41 @@
-2. write a function that will accept two strings and return Boolean if they are anagram
- str1 = rail safety
- str2= fairy tales
+>> what is liquid clustering in databricks
 
+Liquid Clustering is a Databricks Delta Lake table optimization technique where table data is organized around clustering keys in a flexible, dynamic way, adapting over time to maintain query speed.
 
-def check_ang(str1, str2):
-    A = sorted([x.lower() for x in str1 if x != ' '])
-    B = sorted([x.lower() for x in str2 if x != ' '])
-    return A == B
+Why it's needed
+In Delta tables, we often use Partitioning and Z‑ordering but these have challenges:
 
-with main as (
- 
-select dept_name,emp_id,salary from hawa_dept as a left join hawa_emp as b on a.dept_id = b.dept_id)
+Static partitions can become uneven over time (skew).
+A strict sort order (like Z‑order) can be expensive to maintain if incoming data is random
 
+What Liquid Clustering does
+It dynamically manages the layout of data across the table on certain "clustering keys".
+Instead of fixed partitions, it uses a liquid approach — file groups can "flow" between clusters as data changes.
 
-select distinct dept_name,count(emp_id) over (partition by dept_name order by (select null)) as emp_count,
-isnull(max(salary) over (partition by dept_name order by (select null)),0) as max_dept_sal
-from main
-
-SQL problem -
-
- DECLARE @emp_id INT = 2;
-
-WITH emp_hierarchy AS (
-    -- Start with the given employee
-    SELECT 
-        id,
-        name,
-        managerid
-    FROM jaban_emp
-    WHERE id = @emp_id
-
-    UNION ALL
-
-    -- Recursively find each manager
-    SELECT 
-        e.id,
-        e.name,
-        e.managerid
-    FROM jaban_emp e
-    INNER JOIN emp_hierarchy eh
-        ON e.id = eh.managerid
+-- Example: Create new Delta table with Liquid Clustering
+CREATE TABLE sales (
+    sale_id BIGINT,
+    country STRING,
+    product_id BIGINT,
+    sale_date DATE,
+    amount DOUBLE
 )
--- Select all names, from top manager to the employee
-SELECT name
-FROM emp_hierarchy
-ORDER BY CASE WHEN managerid IS NULL THEN 0 ELSE 1 END, id;
+USING DELTA
+LOCATION 'dbfs:/mnt/data/sales_lc'
+CLUSTER BY (country, sale_date);
 
 
+-- Convert to Liquid Clustering
+ALTER TABLE sales
+SET TBLPROPERTIES (
+    'delta.liquidClusteredColumns' = 'country,sale_date'
+);
+
+
+Log files are only automatically cleaned up through log retention policies, which are separate from VACUUM.
+
+_delta_log → cleaned separately via checkpoint/log retention, controlled by:
+
+
+spark.databricks.delta.logRetentionDuration = 'interval'
+Default: 30 days
