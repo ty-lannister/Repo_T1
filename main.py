@@ -46,3 +46,38 @@ Auto Optimize is a capability for Delta Lake tables in Databricks that automatic
   delta.autoOptimize.optimizeWrite = true,
   delta.autoOptimize.autoCompact = true
 )
+
+
+with sub_total_count as (
+    select Team, sum(TotalCount) as TotalMatchPlayed
+    from (
+        select Team_A as Team, count(*) as TotalCount
+        from FixturesStats
+        group by Team_A
+        union all
+        select Team_B as Team, count(*) as TotalCount
+        from FixturesStats
+        group by Team_B
+    ) as sub
+    group by sub.Team
+),
+
+sub_tied_match as(
+ select Team, TotalCount as TotalMatchTied
+    from (
+        select Team_A as Team, count(*) as TotalCount
+        from FixturesStats where Winner = 'NULL'
+        group by Team_A
+        union all
+        select Team_B as Team, count(*) as TotalCount
+        from FixturesStats where Winner ='NULL'
+        group by Team_B
+    ) as sub
+    ),
+
+sub_won_match as
+(select winner,count(winner) as match_won from FixturesStats group by winner) 
+
+select sub_total_count.team as TeamName,sub_total_count.TotalMatchPlayed,match_won,isnull(TotalMatchTied,0) as TotalMatchTied   from sub_total_count left join sub_won_match on team = winner
+left join sub_tied_match on sub_total_count.Team = sub_tied_match.Team
+
