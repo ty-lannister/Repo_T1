@@ -39,3 +39,10 @@ _delta_log → cleaned separately via checkpoint/log retention, controlled by:
 
 spark.databricks.delta.logRetentionDuration = 'interval'
 Default: 30 days
+
+Auto Optimize is a capability for Delta Lake tables in Databricks that automatically optimizes As data is written to a Delta table, small files are automatically compacted into larger files.
+
+    ALTER TABLE my_table SET TBLPROPERTIES (
+  delta.autoOptimize.optimizeWrite = true,
+  delta.autoOptimize.autoCompact = true
+)
